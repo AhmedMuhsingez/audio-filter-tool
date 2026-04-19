@@ -122,6 +122,7 @@ export default function AudioFilterTool() {
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [normalize, setNormalize] = useState(false);
+  const [renameOutput, setRenameOutput] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [presetValue, setPresetValue] = useState<string>('am-radio');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -197,7 +198,7 @@ export default function AudioFilterTool() {
         const finalBuf = normalize ? normalizeBuffer(processed) : processed;
         const wav = bufferToWav(finalBuf);
         const baseName = entry.name.replace(/\.[^.]+$/, '') || 'audio';
-        const outName = `${baseName}_${chainName}.wav`;
+        const outName = renameOutput ? `${baseName}_${chainName}.wav` : `${baseName}.wav`;
         const url = URL.createObjectURL(wav);
         newResults.push({ name: outName, blob: wav, url, error: false });
       } catch (err) {
@@ -340,6 +341,10 @@ export default function AudioFilterTool() {
             <label className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400 cursor-pointer">
               <input type="checkbox" checked={normalize} onChange={(e) => setNormalize(e.target.checked)} className="rounded" />
               Normalize output (prevent clipping)
+            </label>
+            <label className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400 cursor-pointer">
+              <input type="checkbox" checked={renameOutput} onChange={(e) => setRenameOutput(e.target.checked)} className="rounded" />
+              Append filter chain to exported file names
             </label>
           </div>
           <div className={`mt-3 px-3 py-2.5 rounded-lg text-sm min-h-[38px] flex items-center ${statusClasses[status.kind]}`}>
