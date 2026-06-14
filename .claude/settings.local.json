@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(yarn add:*)"
+      "Bash(yarn add:*)",
+      "PowerShell(npx tsc --noEmit -p tsconfig.app.json)"
     ]
   }
 }

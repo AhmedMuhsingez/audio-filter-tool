@@ -26,6 +26,8 @@ type Status = {
   kind: '' | 'success' | 'error';
 };
 
+const QUICK_CHAIN = ['speech-rolloff', 'treble-boost', 'bass-boost'];
+
 const PRESETS: Record<string, Preset> = {
   'am-radio':       { label: 'AM Radio',                  chain: [['highpass', 200, 0.7], ['highpass', 200, 0.7], ['peaking', 1500, 1, 3], ['lowpass', 4500, 0.7], ['lowpass', 4500, 0.7]] },
   'telephone':      { label: 'Telephone',                 chain: [['highpass', 300, 0.7], ['highpass', 300, 0.7], ['peaking', 1200, 1.2, 2], ['lowpass', 3400, 0.7], ['lowpass', 3400, 0.7]] },
@@ -172,16 +174,17 @@ export default function AudioFilterTool() {
     setStatus({ msg: 'Results cleared.', kind: '' });
   };
 
-  const processAll = async () => {
-    if (!canProcess) return;
+  const processAll = async (overrideChain?: string[]) => {
+    const activeChain = overrideChain ?? chain;
+    if (files.length === 0 || activeChain.length === 0 || processing) return;
 
     results.forEach(r => r.url && URL.revokeObjectURL(r.url));
     setResults([]);
     setProcessing(true);
     setProgress(0);
 
-    const combinedChain = chain.flatMap(k => PRESETS[k].chain);
-    const chainName = chain.join('_');
+    const combinedChain = activeChain.flatMap(k => PRESETS[k].chain);
+    const chainName = activeChain.join('_');
     const newResults: ResultEntry[] = [];
     let failed = 0;
 
@@ -219,6 +222,11 @@ export default function AudioFilterTool() {
     } else {
       setStatus({ msg: `All ${failed} file${failed === 1 ? '' : 's'} failed to process.`, kind: 'error' });
     }
+  };
+
+  const quickProcess = () => {
+    setChain(QUICK_CHAIN);
+    processAll(QUICK_CHAIN);
   };
 
   const downloadZip = async () => {
@@ -332,7 +340,7 @@ export default function AudioFilterTool() {
           <div className={sectionLabel}>3. Process</div>
           <div className="flex gap-3 items-center flex-wrap">
             <button
-              onClick={processAll}
+              onClick={() => processAll()}
               disabled={!canProcess}
               className="px-5 py-2 rounded-lg bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 text-sm font-medium hover:bg-black dark:hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
@@ -383,6 +391,16 @@ export default function AudioFilterTool() {
           Filters are biquad chains approximating Audacity's Filter Curve EQ presets. Output is 16-bit PCM WAV at the source sample rate.
         </footer>
       </div>
+
+      <button
+        onClick={quickProcess}
+        disabled={files.length === 0 || processing}
+        title="Speech rolloff → Treble boost → Bass boost, then process"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-5 py-3 rounded-full bg-blue-600 text-white text-sm font-medium shadow-lg shadow-blue-600/30 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+      >
+        <span className="text-base leading-none">⚡</span>
+        {processing ? 'Processing…' : 'Voice enhance'}
+      </button>
     </div>
   );
 }
